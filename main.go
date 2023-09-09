@@ -41,7 +41,7 @@ func main() {
 		scanDir, _ = filepath.Abs(customDirValue)
 	}
 
-	fmt.Printf("scanning directory \"%v\" (recursive=%v) ...\n", scanDir, recursiveValue)
+	fmt.Printf("[*] Scanning directory \"%v\" (recursive=%v) ...\n", scanDir, recursiveValue)
 	var hasAnyPackageAvailableForRegistration bool
 
 	if recursiveValue {
@@ -55,11 +55,11 @@ func main() {
 	}
 
 	if hasAnyPackageAvailableForRegistration {
-		_, _ = fmt.Fprintln(os.Stderr, "one or more packages are available for public registration")
+		_, _ = fmt.Fprintln(os.Stderr, "[!] One or more packages are available for public registration")
 		if !auditValue {
 			os.Exit(1)
 		}
 	} else {
-		fmt.Printf("finished scanning directory \"%v\"\n", scanDir)
+		fmt.Printf("[*] Finished scanning directory \"%v\"\n", scanDir)
 	}
 }

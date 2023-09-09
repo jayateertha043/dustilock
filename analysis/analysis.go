@@ -12,6 +12,12 @@ import (
 	"github.com/jayateertha043/dustilock/dependencies"
 	"github.com/jayateertha043/dustilock/registry"
 )
+// Define regex patterns for filenames
+var filePatterns = []string{
+	`package.*\.json`,
+	`yarn.*\.json`,
+	`requirements.*\.txt`,
+}
 
 func AnalyzePythonRequirementsFile(filePath string) (bool, error) {
 	file, err := os.Open(filePath)
@@ -88,17 +94,12 @@ func AnalyzeDirectoryRecursive(workingDir string, excludedDirectories map[string
 				return filepath.SkipDir
 			}
 		}
-		// Define regex patterns for filenames
-		filePatterns := []string{
-			`package.*\.json`,
-			`yarn.*\.json`,
-			`requirements.*\.txt`,
-		}
+
 		fileName := fileInfo.Name()
 		for pattern_index, pattern := range filePatterns {
 			if matched, _ := regexp.MatchString(pattern, fileName); matched {
+				fmt.Printf("[*] Scanning \"%v\"\n", path)
 				if pattern_index == 0 || pattern_index == 1 {
-					fmt.Printf("scanning \"%v\"\n", path)
 					result, err := AnalyzePackagesJsonFile(path)
 					if result {
 						hasAnyPackageAvailableForRegistration = true
@@ -142,26 +143,28 @@ func AnalyzeDirectory(workingDir string) (bool, error) {
 	for _, fileInfo := range files {
 		fileName := fileInfo.Name()
 		filePath := path.Join(workingDir, fileName)
-
-		if fileName == "package.json" {
-			result, err := AnalyzePackagesJsonFile(filePath)
-			if result {
-				hasAnyPackageAvailableForRegistration = true
-			}
-
-			if err != nil {
-				return false, err
-			}
-		}
-
-		if fileName == "requirements.txt" {
-			result, err := AnalyzePythonRequirementsFile(filePath)
-			if result {
-				hasAnyPackageAvailableForRegistration = true
-			}
-
-			if err != nil {
-				return false, err
+		for pattern_index, pattern := range filePatterns {
+			if matched, _ := regexp.MatchString(pattern, fileName); matched {
+				fmt.Printf("[*] Scanning \"%v\"\n", path)
+				if pattern_index == 0 || pattern_index == 1 {
+					result, err := AnalyzePackagesJsonFile(path)
+					if result {
+						hasAnyPackageAvailableForRegistration = true
+					}
+					if err != nil {
+						fmt.Println(err)
+						return false, err
+					}
+				} else if pattern_index == 2 {
+					result, err := AnalyzePythonRequirementsFile(path)
+					if result {
+						hasAnyPackageAvailableForRegistration = true
+					}
+					if err != nil {
+						fmt.Println(err)
+						return false, err
+					}
+				}
 			}
 		}
 	}
