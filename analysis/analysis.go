@@ -12,6 +12,7 @@ import (
 	"github.com/jayateertha043/dustilock/dependencies"
 	"github.com/jayateertha043/dustilock/registry"
 )
+
 // Define regex patterns for filenames
 var filePatterns = []string{
 	`package.*\.json`,
@@ -145,9 +146,9 @@ func AnalyzeDirectory(workingDir string) (bool, error) {
 		filePath := path.Join(workingDir, fileName)
 		for pattern_index, pattern := range filePatterns {
 			if matched, _ := regexp.MatchString(pattern, fileName); matched {
-				fmt.Printf("[*] Scanning \"%v\"\n", path)
+				fmt.Printf("[*] Scanning \"%v\"\n", filePath)
 				if pattern_index == 0 || pattern_index == 1 {
-					result, err := AnalyzePackagesJsonFile(path)
+					result, err := AnalyzePackagesJsonFile(filePath)
 					if result {
 						hasAnyPackageAvailableForRegistration = true
 					}
@@ -156,7 +157,7 @@ func AnalyzeDirectory(workingDir string) (bool, error) {
 						return false, err
 					}
 				} else if pattern_index == 2 {
-					result, err := AnalyzePythonRequirementsFile(path)
+					result, err := AnalyzePythonRequirementsFile(filePath)
 					if result {
 						hasAnyPackageAvailableForRegistration = true
 					}
