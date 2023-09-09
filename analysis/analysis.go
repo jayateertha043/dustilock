@@ -3,12 +3,14 @@ package analysis
 import (
 	"bufio"
 	"fmt"
-	"github.com/checkmarx/dustilock/dependencies"
-	"github.com/checkmarx/dustilock/registry"
 	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
+
+	"github.com/checkmarx/dustilock/dependencies"
+	"github.com/checkmarx/dustilock/registry"
 )
 
 func AnalyzePythonRequirementsFile(filePath string) (bool, error) {
@@ -32,7 +34,7 @@ func AnalyzePythonRequirementsFile(filePath string) (bool, error) {
 		}
 
 		if availableForRegistration {
-			_, _ = fmt.Fprintln(os.Stderr, fmt.Sprintf("error - python package \"%s\" is available for public registration. %s", pythonPackageName, filePath))
+			_, _ = fmt.Fprintln(os.Stderr, fmt.Sprintf("[!] python package \"%s\" is available for public registration. %s", pythonPackageName, filePath))
 			result = true
 		}
 	}
@@ -64,7 +66,7 @@ func AnalyzePackagesJsonFile(filePath string) (bool, error) {
 		}
 
 		if availableForRegistration {
-			_, _ = fmt.Fprintln(os.Stderr, fmt.Sprintf("error - npm package \"%s\" is available for public registration. %s", packageName, filePath))
+			_, _ = fmt.Fprintln(os.Stderr, fmt.Sprintf("[!] npm package \"%s\" is available for public registration. %s", packageName, filePath))
 			result = true
 		}
 	}
@@ -86,33 +88,39 @@ func AnalyzeDirectoryRecursive(workingDir string, excludedDirectories map[string
 				return filepath.SkipDir
 			}
 		}
-
+		// Define regex patterns for filenames
+		filePatterns := []string{
+			`package.*\.json`,
+			`yarn.*\.json`,
+			`requirements.*\.txt`,
+		}
 		fileName := fileInfo.Name()
-		if fileName == "package.json" {
-			fmt.Printf("scanning \"%v\"\n", path)
-			result, err := AnalyzePackagesJsonFile(path)
-			if result {
-				hasAnyPackageAvailableForRegistration = true
-			}
+		for pattern_index, pattern := range filePatterns {
+			if matched, _ := regexp.MatchString(pattern, fileName); matched {
+				if pattern_index == 0 || pattern_index == 1 {
+					fmt.Printf("scanning \"%v\"\n", path)
+					result, err := AnalyzePackagesJsonFile(path)
+					if result {
+						hasAnyPackageAvailableForRegistration = true
+					}
 
-			if err != nil {
-				fmt.Println(err)
+					if err != nil {
+						fmt.Println(err)
+					}
+					return err
+				} else if pattern_index == 2 {
+					result, err := AnalyzePythonRequirementsFile(path)
+					if result {
+						hasAnyPackageAvailableForRegistration = true
+					}
+
+					if err != nil {
+						fmt.Println(err)
+					}
+					return err
+				}
 			}
-			return err
 		}
-
-		if fileName == "requirements.txt" {
-			result, err := AnalyzePythonRequirementsFile(path)
-			if result {
-				hasAnyPackageAvailableForRegistration = true
-			}
-
-			if err != nil {
-				fmt.Println(err)
-			}
-			return err
-		}
-
 		return nil
 	})
 
