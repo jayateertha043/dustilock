@@ -1,5 +1,5 @@
-module github.com/checkmarx/dustilock
+module github.com/jayateertha043/dustilock
 
-require github.com/akamensky/argparse v1.2.2
+go 1.17
 
-go 1.13
+require github.com/akamensky/argparse v1.4.0
