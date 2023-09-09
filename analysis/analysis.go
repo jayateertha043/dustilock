@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"regexp"
 
-	"github.com/checkmarx/dustilock/dependencies"
-	"github.com/checkmarx/dustilock/registry"
+	"github.com/jayateertha043/dustilock/dependencies"
+	"github.com/jayateertha043/dustilock/registry"
 )
 
 func AnalyzePythonRequirementsFile(filePath string) (bool, error) {

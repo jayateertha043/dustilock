@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/akamensky/argparse"
-	"github.com/checkmarx/dustilock/analysis"
+	"github.com/jayateertha043/dustilock/analysis"
 	"log"
 	"os"
 	"path/filepath"
