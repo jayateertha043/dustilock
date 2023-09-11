@@ -8,9 +8,9 @@ import (
 	"strings"
 )
 
-func ParsePythonRequirements(reader *bufio.Reader) []string {
-	packageNamesSet := map[string]bool{}
+func ParsePythonRequirements(reader *bufio.Reader) map[string]string {
 
+	packageVersions := make(map[string]string)
 	for {
 		lineBytes, _, err := reader.ReadLine()
 		if err != nil {
@@ -24,7 +24,7 @@ func ParsePythonRequirements(reader *bufio.Reader) []string {
 		match := re.FindStringSubmatch(line)
 		if len(match) > 0 {
 			packageName := strings.ToLower(match[1])
-			packageNamesSet[packageName] = true
+			packageVersions[packageName] = "any"
 			continue
 		}
 
@@ -46,25 +46,30 @@ func ParsePythonRequirements(reader *bufio.Reader) []string {
 			continue
 		}
 
-		re = regexp.MustCompile(`^([a-zA-Z0-9_\-.]+)`)
+		re = regexp.MustCompile(`^([a-zA-Z0-9_\-.]+)(?:([=,>,<])?=?([0-9.]+))?`)
 		match = re.FindStringSubmatch(line)
 		if len(match) > 0 {
 			packageName := strings.ToLower(match[1])
-			packageNamesSet[packageName] = true
+			operator := ""
+			if len(match) > 3 {
+				operator = match[2]
+				packageVersion := operator + match[3]
+				if operator == "=" {
+					packageVersion = packageVersion + ":conda"
+				}
+				packageVersions[packageName] = packageVersion
+			} else {
+				packageVersions[packageName] = "*"
+			}
 			continue
 		}
 
 	}
-
-	packageNames := []string{}
-	for k := range packageNamesSet {
-		packageNames = append(packageNames, k)
-	}
-	return packageNames
+	return packageVersions
 }
 
-func ParsePackagesJsonFile(reader *bufio.Reader) ([]string, error) {
-	packageNamesSet := map[string]bool{}
+func ParsePackagesJsonFile(reader *bufio.Reader) (map[string]string, error) {
+	packageVersions := make(map[string]string)
 
 	d := json.NewDecoder(reader)
 	t := struct {
@@ -82,7 +87,12 @@ func ParsePackagesJsonFile(reader *bufio.Reader) ([]string, error) {
 			return
 		}
 
-		value, _ := (*dict)[npmPackageName]
+		value, ok := (*dict)[npmPackageName]
+		if !ok {
+			packageVersions[npmPackageName] = "*" // Assign "*" if version is not specified
+			return
+		}
+
 		version := fmt.Sprintf("%v", value)
 		version = strings.ToLower(version)
 
@@ -94,7 +104,7 @@ func ParsePackagesJsonFile(reader *bufio.Reader) ([]string, error) {
 			return
 		}
 
-		packageNamesSet[npmPackageName] = true
+		packageVersions[npmPackageName] = version
 	}
 
 	if t.Dependencies != nil {
@@ -109,9 +119,5 @@ func ParsePackagesJsonFile(reader *bufio.Reader) ([]string, error) {
 		}
 	}
 
-	packageNames := []string{}
-	for k := range packageNamesSet {
-		packageNames = append(packageNames, k)
-	}
-	return packageNames, err
+	return packageVersions, nil
 }

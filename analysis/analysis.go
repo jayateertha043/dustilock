@@ -32,7 +32,10 @@ func AnalyzePythonRequirementsFile(filePath string) (bool, error) {
 	packageNames := dependencies.ParsePythonRequirements(reader)
 	result := false
 
-	for _, pythonPackageName := range packageNames {
+	for pythonPackageName, pythonPackageVersion := range packageNames {
+		if pythonPackageName == "" {
+			continue
+		}
 		availableForRegistration, err := registry.IsPypiPackageAvailableForRegistration(pythonPackageName)
 
 		if err != nil {
@@ -41,7 +44,7 @@ func AnalyzePythonRequirementsFile(filePath string) (bool, error) {
 		}
 
 		if availableForRegistration {
-			_, _ = fmt.Fprintln(os.Stderr, fmt.Sprintf("[!] python package \"%s\" is available for public registration. %s", pythonPackageName, filePath))
+			_, _ = fmt.Fprintln(os.Stderr, fmt.Sprintf("[!] python package \"%s:%s\" is available for public registration. %s", pythonPackageName, pythonPackageVersion, filePath))
 			result = true
 		}
 	}
@@ -64,8 +67,8 @@ func AnalyzePackagesJsonFile(filePath string) (bool, error) {
 
 	result := false
 
-	for _, packageName := range packageNames {
-		availableForRegistration, err := registry.IsNpmPackageAvailableForRegistration(packageName)
+	for npmpackageName, npmPackageVersion := range packageNames {
+		availableForRegistration, err := registry.IsNpmPackageAvailableForRegistration(npmpackageName)
 
 		if err != nil {
 			fmt.Println(err)
@@ -73,7 +76,7 @@ func AnalyzePackagesJsonFile(filePath string) (bool, error) {
 		}
 
 		if availableForRegistration {
-			_, _ = fmt.Fprintln(os.Stderr, fmt.Sprintf("[!] npm package \"%s\" is available for public registration. %s", packageName, filePath))
+			_, _ = fmt.Fprintln(os.Stderr, fmt.Sprintf("[!] npm package \"%s:%s\" is available for public registration. %s", npmpackageName, npmPackageVersion, filePath))
 			result = true
 		}
 	}
